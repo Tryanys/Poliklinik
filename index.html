@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poliklinik</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Poliklinik</a>
+    </div>
+  </nav>
+
+  <!-- Banner -->
+  <div class="banner">
+    <h1>Selamat Datang di Poliklinik</h1>
+  </div>
+
+  <!-- Cards -->
+  <div class="container my-5">
+    <div class="row justify-content-center">
+      <!-- Login Dokter -->
+      <div class="col-md-4 mb-4">
+        <div class="card shadow text-center">
+          <div class="card-body">
+            <h5 class="card-title">Login sebagai Dokter</h5>
+            <p class="card-text">Akses ke informasi pasien dan jadwal praktek Anda.</p>
+            <a href="dokter/login_dokter.php" class="btn btn-success">Login Dokter</a>
+          </div>
+        </div>
+      </div>
+      <!-- Login Pasien -->
+      <div class="col-md-4 mb-4">
+        <div class="card shadow text-center">
+          <div class="card-body">
+            <h5 class="card-title">Login sebagai Pasien</h5>
+            <p class="card-text">Akses untuk melihat jadwal konsultasi dan riwayat Anda.</p>
+            <a href="pasien/login_pasien.php" class="btn btn-success">Login Pasien</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

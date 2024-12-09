@@ -1,0 +1,52 @@
+/* Banner styling */
+.banner {
+    background-color: #2a6dc4; /* Background color for banner */
+    color: white;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.banner h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+/* Card styling */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for scaling and shadow */
+    min-height: 200px; /* Ensures cards have the same height */
+    margin-top: 30px;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(5, 5, 5, 0.2);
+}
+
+/* Card Title Alignment */
+.card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Set consistent padding for cards */
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Navbar styling */
+/* Navbar styling */
+.navbar {
+    background-color: #1452a3 !important; /* Force the color to change */
+    margin: 0;
+}
+
+.navbar-brand {
+    color: white !important;
+    font-weight: bold;
+}
