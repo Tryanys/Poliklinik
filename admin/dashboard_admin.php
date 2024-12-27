@@ -309,36 +309,36 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="formTambahPasien">
+            <form id="formTambahPasien">
                     <div class="mb-3">
                         <label for="pasienNama" class="form-label">Nama</label>
-                        <input type="text" class="form-control" id="pasienNama" required>
+                        <input type="text" class="form-control" id="pasienNama" name="nama_pasien" required>
                     </div>
                     <div class="mb-3">
                         <label for="pasienAlamat" class="form-label">Alamat</label>
-                        <input type="text" class="form-control" id="pasienAlamat" required>
+                        <input type="text" class="form-control" id="pasienAlamat" name="alamat_pasien" required>
                     </div>
                     <div class="mb-3">
                         <label for="pasienNoKTP" class="form-label">No. KTP</label>
-                        <input type="text" class="form-control" id="pasienNoKTP" required>
+                        <input type="text" class="form-control" id="pasienNoKTP" name="no_ktp" required>
                     </div>
                     <div class="mb-3">
                         <label for="pasienNoHP" class="form-label">No HP</label>
-                        <input type="text" class="form-control" id="pasienNoHP" required>
+                        <input type="text" class="form-control" id="pasienNoHP" name="no_hp_pasien" required>
                     </div>
                     <div class="mb-3">
-                        <label for="pasienPoli" class="form-label">No RM</label>
-                        <input type="text" class="form-control" id="pasienPoli" required>
+                        <label for="no_rm" class="form-label">No RM</label>
+                        <input type="text" class="form-control" id="no_rm" name="no_rm" readonly>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                        <button type="button" class="btn btn-primary" id="btnSimpanPasien">Simpan</button>
-                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
                 </form>
+
             </div>
         </div>
     </div>
 </div>
+
 
 
 
@@ -514,44 +514,39 @@
         });
 
          // Menampilkan modal tambah pasien
-         document.getElementById('tambah-pasien-btn').addEventListener('click', function() {
-            new bootstrap.Modal(document.getElementById('tambahPasienModal')).show();
+document.getElementById('tambah-pasien-btn').addEventListener('click', function () {
+    fetch('tambah_pasien.php') // Panggil endpoint untuk generate No RM (GET request)
+        .then(response => response.text())
+        .then(noRM => {
+            document.getElementById('no_rm').value = noRM; // Isi input No RM
+            new bootstrap.Modal(document.getElementById('tambahPasienModal')).show(); // Tampilkan modal
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Gagal mengambil No RM. Silakan coba lagi.');
         });
+});
 
-        // Menyimpan data pasien
-        document.getElementById('btnSimpanPasien').addEventListener('click', function() {
-            var namaPasien = document.getElementById('pasienNama').value;
-            var alamatPasien = document.getElementById('pasienAlamat').value;
-            var noktp = document.getElementById('pasienNoKTP').value;
-            var noHpPasien = document.getElementById('pasienNoHP').value;
-            var idPoli = document.getElementById('pasienPoli').value;
+// Proses penyimpanan data pasien
+document.getElementById('formTambahPasien').addEventListener('submit', function (event) {
+    event.preventDefault(); // Mencegah form refresh
+    
+    const formData = new FormData(this);
 
-            if (!namaPasien || !alamatPasien || !noHpPasien || !idPoli) {
-                alert('Harap lengkapi semua data.');
-                return;
-            }
-
-            fetch('tambah_pasien.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'nama_pasien=' + encodeURIComponent(namaPasien) +
-                      '&alamat_pasien=' + encodeURIComponent(alamatPasien) +
-                      '&no_ktp=' + encodeURIComponent(noktp) +
-                      '&no_hp_pasien=' + encodeURIComponent(noHpPasien) +
-                      '&no_rm=' + encodeURIComponent(idPoli)
-            })
-            .then(response => response.text())
-            .then(data => {
-                alert(data);
-                $('#tambahPasienModal').modal('hide');
-                location.reload(); 
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+    fetch('tambah_pasien.php', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.text())
+        .then(data => {
+            alert(data); // Menampilkan pesan sukses dari server
+            location.reload(); // Refresh halaman setelah penyimpanan
+        })
+        .catch(error => {
+            console.error('Error:', error);
         });
+});
+
 
         // Menghapus pasien
         $(document).on('click', '.btnHapusPasien', function() {
@@ -559,7 +554,9 @@
             if (confirm('Apakah Anda yakin ingin menghapus pasien ini?')) {
                 $.post('hapus_pasien.php', { id: pasienId }, function(response) {
                     alert(response);
+                    location.reload();
                     $('#pasien' + pasienId).remove();
+                    
                 }).fail(function() {
                     alert('Terjadi kesalahan saat menghapus data.');
                 });

@@ -7,6 +7,32 @@ if (!isset($_SESSION['dokter'])) {
 }
 
 $dokter_nama = $_SESSION['dokter'];
+
+// Koneksi database
+include('../koneksi.php');
+
+// Menangani proses tambah jadwal
+if (isset($_POST['tambah_jadwal'])) {
+    $id_dokter = $_POST['id_dokter'];
+    $hari = $_POST['hari'];
+    $jam_mulai = $_POST['jam_mulai'];
+    $jam_selesai = $_POST['jam_selesai'];
+
+    $sql = "INSERT INTO jadwal_periksa (id_dokter, hari, jam_mulai, jam_selesai) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("isss", $id_dokter, $hari, $jam_mulai, $jam_selesai);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Jadwal berhasil ditambahkan!');</script>";
+    } else {
+        echo "<script>alert('Terjadi kesalahan saat menambahkan jadwal!');</script>";
+    }
+    $stmt->close();
+}
+
+// Mengambil data jadwal periksa
+$jadwal_sql = "SELECT * FROM jadwal_periksa JOIN dokter ON jadwal_periksa.id_dokter = dokter.id";
+$jadwal_result = $conn->query($jadwal_sql);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -23,7 +49,8 @@ $dokter_nama = $_SESSION['dokter'];
     <div class="sidebar">
         <h3>Dashboard Dokter</h3>
         <a href="#" id="dashboard-tab">Dashboard</a>
-        <a href="#" id="jadwal-tab">Jadwal Dokter</a>
+        <a href="#" id="jadwal-tab">Jadwal Periksa</a>
+        <a href="#" id="periksa-pasien-tab">Periksa Pasien</a>
         <a href="#" id="riwayat-tab">Riwayat Pasien</a>
         <a href="../admin/logout.php" class="text-white">Logout</a>
     </div>
@@ -34,127 +61,425 @@ $dokter_nama = $_SESSION['dokter'];
         <div id="dashboard-content" class="content-section">
             <h3>Dashboard</h3>
         </div>
-
+        
         <div id="jadwal-content" class="content-section">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Jadwal Dokter Hari Ini</h5>
-                    <button class="btn btn-primary" id="tambah-jadwal-btn">Tambah Jadwal</button>
+                    <h5>Jadwal Periksa Hari Ini</h5>
+                    <button class="btn btn-primary" id="tambah-jadwal-btn" data-bs-toggle="modal" data-bs-target="#tambahJadwalModal">Tambah Jadwal</button>
                 </div>
                 <div class="card-body">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Nama Dokter</th>
-                                <th>Hari</th>
-                                <th>Jam Mulai</th>
-                                <th>Jam Selesai</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Dr. Andi</td>
-                                <td>Senin</td>
-                                <td>09:00 AM</td>
-                                <td>12:00 PM</td>
-                                <td><span class="badge bg-success">Tersedia</span></td>
-                                <td><button class="btn btn-warning btn-sm">Edit</button></td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>Dr. Siti</td>
-                                <td>Selasa</td>
-                                <td>02:00 PM</td>
-                                <td>05:00 PM</td>
-                                <td><span class="badge bg-warning">Tunggu konfirmasi</span></td>
-                                <td><button class="btn btn-warning btn-sm">Edit</button></td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>Dr. Budi</td>
-                                <td>Rabu</td>
-                                <td>08:00 AM</td>
-                                <td>11:00 AM</td>
-                                <td><span class="badge bg-danger">Tidak Tersedia</span></td>
-                                <td><button class="btn btn-warning btn-sm">Edit</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID Jadwal</th>
+                            <th>Dokter</th>
+                            <th>Hari</th>
+                            <th>Jam Mulai</th>
+                            <th>Jam Selesai</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Koneksi ke database
+                            include('../koneksi.php');
+                            
+                            // Ambil data jadwal dari database
+                            $sql = "SELECT j.id, j.hari, j.jam_mulai, j.jam_selesai, d.id AS dokter_id, d.nama AS nama 
+                            FROM jadwal_periksa j 
+                            JOIN dokter d ON j.id_dokter = d.id";
 
-        <div id="riwayat-content" class="content-section">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Riwayat Pasien yang Pernah Dikunjungi</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Nama Pasien</th>
-                                <th>Keluhan</th>
-                                <th>Diagnosa</th>
-                                <th>Pengobatan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>John Doe</td>
-                                <td>Demam tinggi</td>
-                                <td>Infeksi Saluran Pernapasan</td>
-                                <td>Paracetamol</td>
-                            </tr>
-                            <tr>
-                                <td>Jane Smith</td>
-                                <td>Pusing dan mual</td>
-                                <td>Vertigo</td>
-                                <td>Betahistine</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                            $result = $conn->query($sql);
+                            while ($row = $result->fetch_assoc()) {
+                                echo "<tr>
+                                        <td>{$row['id']}</td>
+                                        <td>{$row['nama']}</td>
+                                        <td>{$row['hari']}</td>
+                                        <td>{$row['jam_mulai']}</td>
+                                        <td>{$row['jam_selesai']}</td>
+                                        <td>
+                                            <button class='btn btn-warning edit-btn' 
+                                                    data-bs-toggle='modal' 
+                                                    data-bs-target='#editJadwalModal'
+                                                    data-id='{$row['id']}' 
+                                                    data-dokter-nama='{$row['nama']}' 
+                                                    data-hari='{$row['hari']}' 
+                                                    data-jam_mulai='{$row['jam_mulai']}' 
+                                                    data-jam_selesai='{$row['jam_selesai']}'>
+                                                Edit
+                                            </button>
+                                        </td>
+                                    </tr>";
+                            }
+                        ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="periksa-pasien-content" class="content-section">
+    <h3>Daftar Periksa Pasien</h3>
+    
+    <!-- Tabel Daftar Periksa Pasien -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>No Antrian</th>
+                <th>Nama Pasien</th>
+                <th>Keluhan</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            // Koneksi ke database
+            include('../koneksi.php'); // Pastikan koneksi.php berisi koneksi ke database
+
+            // Query untuk mengambil data pasien dengan JOIN antara daftar_poli dan pasien
+            $sql = "SELECT dp.no_antrian, p.nama, dp.keluhan, dp.status_periksa 
+                    FROM daftar_poli dp JOIN pasien p ON dp.id_pasien = p.id;";
+            $result = $conn->query($sql);
+
+            // Cek apakah ada data yang ditemukan
+            if ($result->num_rows > 0) {
+                // Loop melalui hasil query dan tampilkan dalam tabel
+                while ($row = $result->fetch_assoc()) {
+                    $no_antrian = $row['no_antrian'];
+                    $nama_pasien = $row['nama'];
+                    $keluhan = $row['keluhan'];
+                    $status_periksa = $row['status_periksa'];
+
+                    echo "<tr>
+                            <td>" . $no_antrian . "</td>
+                            <td>" . $nama_pasien . "</td>
+                            <td>" . $keluhan . "</td>
+                            <td>";
+
+                    // Menampilkan tombol sesuai dengan status pemeriksaan
+                    if ($status_periksa == 'belum diperiksa') {
+                        echo "<button class='btn btn-info' 
+                                data-bs-toggle='modal' 
+                                data-bs-target='#periksaModal'
+                                onclick='setPasienData(\"" . $no_antrian . "\", \"" . $nama_pasien . "\", \"" . $keluhan . "\")'>Periksa</button>";
+                    } else {
+                        echo "<button class='btn btn-secondary' 
+                                onclick='showDetail(\"" . $no_antrian . "\")'>Detail</button>";
+                    }
+
+                    echo "</td></tr>";
+                }
+            } else {
+                // Jika tidak ada data
+                echo "<tr><td colspan='4'>Tidak ada data pasien.</td></tr>";
+            }
+            ?>
+        </tbody>
+    </table>
+</div>
+            <!-- Modal Pemeriksaan Pasien -->
+<div class="modal fade" id="periksaModal" tabindex="-1" aria-labelledby="periksaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="periksaModalLabel">Form Pemeriksaan Pasien</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form Pemeriksaan -->
+                <form action="simpan_pemeriksaan.php" method="POST">
+                <input type="hidden" id="no_antrian" name="no_antrian">
+                    <div class="mb-3">
+                        <label for="nama_pasien" class="form-label">Nama Pasien</label>
+                        <input type="text" class="form-control" id="nama_pasien" name="nama_pasien" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tanggal_periksa" class="form-label">Tanggal Periksa</label>
+                        <input type="date" class="form-control" id="tanggal_periksa" name="tanggal_periksa" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="catatan" class="form-label">Catatan</label>
+                        <textarea class="form-control" id="catatan" name="catatan" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="obat" class="form-label">Pilih Obat</label>
+                        <select class="form-select" id="obat" name="obat" required onchange="hitungBiaya()">
+                            <option value="">Pilih Obat</option>
+                            <?php
+                            // Koneksi ke database untuk mengambil data obat
+                            include('../koneksi.php');
+                            
+                            $sql = "SELECT id, nama_obat, harga FROM obat";
+                            $result = $conn->query($sql);
+
+                            // Menampilkan obat di dropdown
+                            while ($row = $result->fetch_assoc()) {
+                                echo "<option value='".$row['id_obat']."' data-harga='".$row['harga']."'>".$row['nama_obat']."</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="biaya_periksa" class="form-label">Biaya Periksa</label>
+                        <input type="text" class="form-control" id="biaya_periksa" name="biaya_periksa" readonly>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan Pemeriksaan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+include('../koneksi.php'); // Pastikan koneksi.php berisi koneksi ke database
+
+// Query untuk mengambil data pasien
+$sql = "SELECT nama, alamat, no_ktp, no_hp, no_rm FROM pasien";
+$result = $conn->query($sql);
+?>
+
+<div id="riwayat-content" class="content-section">
+    <div class="card">
+        <div class="card-header">
+            <h5>Riwayat Pasien yang Pernah Dikunjungi</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nama Pasien</th>
+                        <th>Alamat</th>
+                        <th>No KTP</th>
+                        <th>No HP</th>
+                        <th>No RM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    // Cek apakah ada data yang ditemukan
+                    if ($result->num_rows > 0) {
+                        // Loop untuk menampilkan data pasien
+                        while ($row = $result->fetch_assoc()) {
+                            echo "<tr>
+                                    <td>" . $row['nama'] . "</td>
+                                    <td>" . $row['alamat'] . "</td>
+                                    <td>" . $row['no_ktp'] . "</td>
+                                    <td>" . $row['no_hp'] . "</td>
+                                    <td>" . $row['no_rm'] . "</td>
+                                  </tr>";
+                        }
+                    } else {
+                        // Jika tidak ada data pasien
+                        echo "<tr><td colspan='5'>Tidak ada riwayat pasien.</td></tr>";
+                    }
+                    ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Modal Tambah Jadwal -->
+    <div class="modal fade" id="tambahJadwalModal" tabindex="-1" aria-labelledby="tambahJadwalModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tambahJadwalModalLabel">Tambah Jadwal Periksa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" method="POST">
+                        <div class="mb-3">
+                            <label for="id_dokter" class="form-label">Nama Dokter</label>
+                            <select class="form-select" id="id_dokter" name="id_dokter" required>
+                                <?php
+                                // Ambil data dokter untuk dipilih
+                                $dokter_sql = "SELECT * FROM dokter";
+                                $dokter_result = $conn->query($dokter_sql);
+                                while ($dokter_row = $dokter_result->fetch_assoc()) {
+                                    echo "<option value='" . $dokter_row['id'] . "'>" . $dokter_row['nama'] . "</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="hari" class="form-label">Hari</label>
+                            <input type="text" class="form-control" id="hari" name="hari" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jam_mulai" class="form-label">Jam Mulai</label>
+                            <input type="time" class="form-control" id="jam_mulai" name="jam_mulai" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jam_selesai" class="form-label">Jam Selesai</label>
+                            <input type="time" class="form-control" id="jam_selesai" name="jam_selesai" required>
+                        </div>
+
+
+                        <button type="submit" name="tambah_jadwal" class="btn btn-primary">Tambah Jadwal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="editJadwalModal" tabindex="-1" aria-labelledby="editJadwalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editJadwalModalLabel">Edit Jadwal Periksa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editJadwalForm" method="POST" action="update_jadwal.php">
+                    <input type="hidden" id="id_jadwal" name="id_jadwal">
+                    
+                    <div class="mb-3">
+                        <label for="dokter" class="form-label">Dokter</label>
+                        <input type="text" class="form-control" id="dokter" name="dokter" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="hari" class="form-label">Hari</label>
+                        <input type="text" class="form-control" id="hari" name="hari" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="jam_mulai" class="form-label">Jam Mulai</label>
+                        <input type="time" class="form-control" id="jam_mulai" name="jam_mulai" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="jam_selesai" class="form-label">Jam Selesai</label>
+                        <input type="time" class="form-control" id="jam_selesai" name="jam_selesai" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+<script>
+    function setPasienData(no_antrian, nama_pasien, keluhan) {
+        document.getElementById('nama_pasien').value = nama_pasien;
+        document.getElementById('no_antrian').value = no_antrian; 
+    }
+    function showDetail(no_antrian) {
+        alert("Menampilkan detail pemeriksaan untuk No Antrian: " + no_antrian);
+    }
+
+    function hitungBiaya() {
+        var obatSelect = document.getElementById('obat');
+        var selectedOption = obatSelect.options[obatSelect.selectedIndex];
+        var hargaObat = selectedOption.getAttribute('data-harga');
+        var biayaJasaDokter = 150000;
+        var totalBiaya = parseInt(hargaObat) + biayaJasaDokter;
+
+        document.getElementById('biaya_periksa').value = totalBiaya;
+    }
+</script>
+
+<script>
+    $('#editJadwalModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget); // Tombol yang memicu modal
+        var idJadwal = button.data('id');
+        var dokterId = button.data('dokter');  // Cek apakah ini dikirimkan
+        var dokterNama = button.data('dokter-nama'); // Nama dokter
+        var hari = button.data('hari');
+        var jamMulai = button.data('jam_mulai');
+        var jamSelesai = button.data('jam_selesai');
+
+        // Debugging: Cek apakah nilai yang diterima benar
+        console.log('ID Jadwal:', idJadwal);
+        console.log('Dokter ID:', dokterId);  // Periksa apakah ini bernilai benar
+        console.log('Dokter Nama:', dokterNama);
+        console.log('Hari:', hari);
+        console.log('Jam Mulai:', jamMulai);
+        console.log('Jam Selesai:', jamSelesai);
+
+        // Isi nilai ke dalam form modal
+        var modal = $(this);
+        modal.find('#id_jadwal').val(idJadwal);
+        modal.find('#dokter').val(dokterNama);  // Tampilkan nama dokter
+        modal.find('#hari').val(hari);
+        modal.find('#jam_mulai').val(jamMulai);
+        modal.find('#jam_selesai').val(jamSelesai);
+    });
+</script>
+
+
+
+    <script>
+    // Pastikan format waktu selalu 24 jam
+    document.getElementById('jam_mulai').addEventListener('change', function () {
+        let time = this.value;
+        if (time) {
+            // Format jam untuk memastikan selalu dalam format 24 jam
+            let timeArray = time.split(':');
+            let hours = timeArray[0].padStart(2, '0');
+            let minutes = timeArray[1].padStart(2, '0');
+            this.value = hours + ':' + minutes;
+        }
+    });
+
+    document.getElementById('jam_selesai').addEventListener('change', function () {
+        let time = this.value;
+        if (time) {
+            // Format jam untuk memastikan selalu dalam format 24 jam
+            let timeArray = time.split(':');
+            let hours = timeArray[0].padStart(2, '0');
+            let minutes = timeArray[1].padStart(2, '0');
+            this.value = hours + ':' + minutes;
+        }
+    });
+</script>
 
     <script>
         window.onload = function() {
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('jadwal-content').style.display = 'none';
+            document.getElementById('periksa-pasien-content').style.display = 'none';
             document.getElementById('riwayat-content').style.display = 'none';
         }
 
         document.getElementById('dashboard-tab').addEventListener('click', function() {
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('jadwal-content').style.display = 'none';
+            document.getElementById('periksa-pasien-content').style.display = 'none';
             document.getElementById('riwayat-content').style.display = 'none';
         });
 
         document.getElementById('jadwal-tab').addEventListener('click', function() {
             document.getElementById('jadwal-content').style.display = 'block';
+            document.getElementById('periksa-pasien-content').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'none';
             document.getElementById('riwayat-content').style.display = 'none';
         });
+        document.getElementById('periksa-pasien-tab').addEventListener('click', function() {
+            document.getElementById('periksa-pasien-content').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'none';
+            document.getElementById('jadwal-content').style.display = 'none';
+            document.getElementById('riwayat-content').style.display = 'none';
+        
+    });
 
         document.getElementById('riwayat-tab').addEventListener('click', function() {
             document.getElementById('riwayat-content').style.display = 'block';
-            document.getElementById('jadwal-content').style.display = 'none';
             document.getElementById('dashboard-content').style.display = 'none';
+            document.getElementById('jadwal-content').style.display = 'none';
+            document.getElementById('periksa-pasien-content').style.display = 'none';
         });
 
-        // Event listener untuk tombol "Tambah Jadwal"
-        document.getElementById('tambah-jadwal-btn').addEventListener('click', function() {
-            alert('Form untuk menambahkan jadwal dokter akan muncul!');
-            // Anda dapat menambahkan logika untuk menampilkan form atau modals di sini
-        });
     </script>
 </body>
 

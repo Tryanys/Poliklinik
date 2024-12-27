@@ -2,21 +2,31 @@
 include('../koneksi.php');
 
 if (isset($_POST['id'])) {
-    $pasienId = intval($_POST['id']); 
+    $pasienId = intval($_POST['id']);
 
-    // Query untuk menghapus data dokter berdasarkan ID
+    // Hapus data berdasarkan ID
     $sql = "DELETE FROM pasien WHERE id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $pasienId); // Bind parameter dengan tipe integer
+    $stmt->bind_param("i", $pasienId);
 
-    // Eksekusi query   
     if ($stmt->execute()) {
-        echo "Data dokter berhasil dihapus.";
+        // Urutkan ulang ID
+        $reorderSql = "SET @count = 0; UPDATE pasien SET id = @count := @count + 1 ORDER BY id";
+        if ($conn->query($reorderSql)) {
+            // Reset auto_increment
+            $resetAutoIncrementSql = "ALTER TABLE pasien AUTO_INCREMENT = (SELECT MAX(id) + 1 FROM pasien)";
+            if ($conn->query($resetAutoIncrementSql)) {
+                echo "Data pasien berhasil dihapus dan ID diurutkan ulang.";
+            } else {
+                echo "Data pasien berhasil dihapus, tetapi gagal mereset auto_increment.";
+            }
+        } else {
+            echo "Data pasien berhasil dihapus, tetapi gagal mengurutkan ulang ID.";
+        }
     } else {
-        echo "Terjadi kesalahan saat menghapus data dokter.";
+        echo "Terjadi kesalahan saat menghapus data pasien.";
     }
 
-    // Tutup statement dan koneksi
     $stmt->close();
     $conn->close();
 } else {
