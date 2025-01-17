@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['poli'])) {
                                     <h5>Daftar Poli</h5>
                                 </div>
                                 <div class="card-body">
-                                <form action="daftar_poli.php" method="POST">
+                                    <form action="daftar_poli.php" method="POST">
                                         <!-- Dropdown Poli -->
                                         <div class="mb-3">
                                             <label for="poli" class="form-label">Pilih Poli</label>
@@ -98,11 +98,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['poli'])) {
                                                 <label for="jadwal" class="form-label">Pilih Jadwal</label>
                                                 <select class="form-select" id="jadwal" name="id_jadwal" required>
                                                     <option value="">-- Pilih Jadwal --</option>
-                                                    <?php foreach ($jadwal_options as $jadwal) { ?>
-                                                        <option value="<?= $jadwal['id']; ?>">
-                                                            <?= $jadwal['hari'] . ' - ' . $jadwal['jam_mulai'] . ' s/d ' . $jadwal['jam_selesai'] . ' - ' . $jadwal['nama']; ?>
-                                                        </option>
-                                                    <?php } ?>
+                                                        <?php
+                                                        // Koneksi ke database
+                                                        include('../koneksi.php');
+
+                                                        // Periksa apakah poli dipilih
+                                                        if (isset($_POST['poli']) && !empty($_POST['poli'])) {
+                                                            $poli_id = $_POST['poli'];
+
+                                                            // Query untuk mengambil jadwal dengan status 'aktif' dan sesuai dengan poli yang dipilih
+                                                            $sql = "SELECT jp.id, jp.hari, jp.jam_mulai, jp.jam_selesai, d.nama
+                                                                FROM jadwal_periksa jp
+                                                                JOIN dokter d ON jp.id_dokter = d.id
+                                                                WHERE jp.status = 'aktif' AND jp.id_poli = ?";
+
+                                                            $stmt = $conn->prepare($sql);
+                                                            $stmt->bind_param("i", $poli_id);
+                                                            $stmt->execute();
+                                                            $result = $stmt->get_result();
+
+                                                            // Periksa apakah ada hasil
+                                                            if ($result->num_rows > 0) {
+                                                                while ($row = $result->fetch_assoc()) {
+                                                                    var_dump($row); // Periksa hasilnya
+                                                                    echo "<option value='" . htmlspecialchars($row['id']) . "'>" .
+                                                                        htmlspecialchars($row['hari']) . ' - ' .
+                                                                        htmlspecialchars($row['jam_mulai']) . ' s/d ' .
+                                                                        htmlspecialchars($row['jam_selesai']) . ' - ' .
+                                                                        htmlspecialchars($row['nama']) .
+                                                                        "</option>";
+                                                                }
+                                                            } else {
+                                                                echo "<option value=''>Tidak ada jadwal aktif untuk poli ini</option>";
+                                                            }
+
+                                                            // Menutup koneksi
+                                                            $stmt->close();
+                                                            $conn->close();
+                                                        }
+                                                        ?>
+
                                                 </select>
                                             </div>
                                         </div>
@@ -118,91 +153,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['poli'])) {
                                 </div>
                             </div>
                         </div>
+
                         <div class="col-md-8">
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Nama Poli</th>
-                <th>Dokter</th>
-                <th>Hari</th>
-                <th>Jam Mulai</th>
-                <th>Jam Selesai</th>
-                <th>No Antrian</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            // Koneksi ke database
-            include '../koneksi.php';
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Poli</th>
+                                        <th>Dokter</th>
+                                        <th>Hari</th>
+                                        <th>Jam Mulai</th>
+                                        <th>Jam Selesai</th>
+                                        <th>No Antrian</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    // Koneksi ke database
+                                    include '../koneksi.php';
 
-            // Pastikan session id_pasien ada
-            if (!isset($_SESSION['id_pasien'])) {
-                echo "<tr><td colspan='8'>Silakan login untuk melihat data.</td></tr>";
-                exit;
-            }
+                                    // Pastikan session id_pasien ada
+                                    if (!isset($_SESSION['id_pasien'])) {
+                                        echo "<tr><td colspan='8'>Silakan login untuk melihat data.</td></tr>";
+                                        exit;
+                                    }
 
-            $id_pasien = $_SESSION['id_pasien'];
-            $sql = "SELECT dp.id_pasien, 
-                        p.nama_poli AS poli, 
-                        d.nama AS dokter, 
-                        jp.hari, 
-                        jp.jam_mulai, 
-                        jp.jam_selesai, 
-                        dp.no_antrian, 
-                        dp.id AS id_daftar_poli
-                    FROM daftar_poli dp
-                    JOIN jadwal_periksa jp ON dp.id_jadwal = jp.id
-                    JOIN dokter d ON jp.id_dokter = d.id
-                    JOIN poli p ON d.id_poli = p.id
-                    WHERE dp.id_pasien = ?";
+                                    $id_pasien = $_SESSION['id_pasien'];
+                                    $sql = "SELECT dp.id_pasien, 
+                                                p.nama_poli AS poli, 
+                                                d.nama AS dokter, 
+                                                jp.hari, 
+                                                jp.jam_mulai, 
+                                                jp.jam_selesai, 
+                                                dp.no_antrian, 
+                                                dp.id AS id_daftar_poli
+                                            FROM daftar_poli dp
+                                            JOIN jadwal_periksa jp ON dp.id_jadwal = jp.id
+                                            JOIN dokter d ON jp.id_dokter = d.id
+                                            JOIN poli p ON d.id_poli = p.id
+                                            WHERE dp.id_pasien = ?";
 
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $id_pasien);
-            $stmt->execute();
-            $result = $stmt->get_result();
+                                    $stmt = $conn->prepare($sql);
+                                    $stmt->bind_param("i", $id_pasien);
+                                    $stmt->execute();
+                                    $result = $stmt->get_result();
 
-            // Tampilkan data dalam tabel
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    // Mengecek apakah pasien sudah diperiksa atau belum
-                    $id_daftar_poli = $row['id_daftar_poli'];
-                    $sqlPeriksa = "SELECT * FROM periksa WHERE id_daftar_poli = ?";
-                    $stmtPeriksa = $conn->prepare($sqlPeriksa);
-                    $stmtPeriksa->bind_param("i", $id_daftar_poli);
-                    $stmtPeriksa->execute();
-                    $resultPeriksa = $stmtPeriksa->get_result();
-                    $status = "Belum Diperiksa";
+                                    // Tampilkan data dalam tabel
+                                    if ($result->num_rows > 0) {
+                                        while ($row = $result->fetch_assoc()) {
+                                            // Mengecek apakah pasien sudah diperiksa atau belum
+                                            $id_daftar_poli = $row['id_daftar_poli'];
+                                            $sqlPeriksa = "SELECT * FROM periksa WHERE id_daftar_poli = ?";
+                                            $stmtPeriksa = $conn->prepare($sqlPeriksa);
+                                            $stmtPeriksa->bind_param("i", $id_daftar_poli);
+                                            $stmtPeriksa->execute();
+                                            $resultPeriksa = $stmtPeriksa->get_result();
+                                            $status = "Belum Diperiksa";
 
-                    // Jika sudah diperiksa, ubah status dan tombol aksi
-                    if ($resultPeriksa->num_rows > 0) {
-                        $status = "Sudah Diperiksa";
-                    }
+                                            // Jika sudah diperiksa, ubah status dan tombol aksi
+                                            if ($resultPeriksa->num_rows > 0) {
+                                                $status = "Sudah Diperiksa";
+                                            }
 
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars($row['poli']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['dokter']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['hari']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['jam_mulai']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['jam_selesai']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['no_antrian']) . "</td>";
-                    echo "<td>" . htmlspecialchars($status) . "</td>";
-                    echo "</tr>";
-                }
-            } else {
-                echo "<tr><td colspan='8'>Tidak ada data jadwal.</td></tr>";
-            }
+                                            echo "<tr>";
+                                            echo "<td>" . htmlspecialchars($row['poli']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['dokter']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['hari']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['jam_mulai']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['jam_selesai']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['no_antrian']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($status) . "</td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='8'>Tidak ada data jadwal.</td></tr>";
+                                    }
 
-            $stmt->close();
-            $conn->close();
-            ?>
-        </tbody>
-    </table>
-</div>
-
-
-
-
+                                    $stmt->close();
+                                    $conn->close();
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -260,6 +292,18 @@ function lihatDetail(idDaftarPoli) {
 });
 
 </script>
+<script>
+function toggleJadwal() {
+    var poliSelect = document.getElementById('poli');
+    var jadwalContainer = document.getElementById('jadwal-container');
+    if (poliSelect.value !== "") {
+        jadwalContainer.style.display = 'block';
+    } else {
+        jadwalContainer.style.display = 'none';
+    }
+}
+</script>
+
 
 
     <script>
